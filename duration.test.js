@@ -10,6 +10,7 @@ test('formats seconds below a minute', () => {
 test('carries minutes and pads remaining seconds', () => {
   assert.equal(formatDuration(60), '1:00');
   assert.equal(formatDuration(125), '2:05');
+  assert.equal(formatDuration(3605), '60:05');
 });
 
 test('rejects negative and fractional durations', () => {

@@ -1,44 +1,14 @@
-name: Representative CI
-
+name: Unsupported runner diagnostics r-56e76ddd4fcb
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
-
 permissions:
   contents: read
-
 jobs:
-  test:
-    name: Test (Node ${{ matrix.node }})
+  linux_control:
+    name: Probe ubuntu-latest
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ['20', '22']
+    timeout-minutes: 2
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-      - name: Run duration tests
-        run: npm test
-      - name: Identify tested source
-        run: git rev-parse HEAD
-
-  complete:
-    name: All tests passed
-    needs: test
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: Verify dependency result
-        env:
-          TEST_RESULT: ${{ needs.test.result }}
-          EVENT_NAME: ${{ github.event_name }}
-        run: |
-          test "$TEST_RESULT" = success
-          echo "E2E_COMPLETE: event=$EVENT_NAME tests=$TEST_RESULT"
+      - name: Identify executed probe
+        run: echo "RUNNER_PROBE r-56e76ddd4fcb ubuntu-latest"

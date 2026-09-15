@@ -1,44 +1,39 @@
-name: Representative CI
-
+name: di-id real OIDC proof
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
-
 permissions:
   contents: read
-
+  id-token: write
 jobs:
-  test:
-    name: Test (Node ${{ matrix.node }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        node: ['20', '22']
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node }}
-      - name: Run duration tests
-        run: npm test
-      - name: Identify tested source
-        run: git rev-parse HEAD
-
-  complete:
-    name: All tests passed
-    needs: test
+  identity:
+    name: Real OIDC CLI
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Verify dependency result
-        env:
-          TEST_RESULT: ${{ needs.test.result }}
-          EVENT_NAME: ${{ github.event_name }}
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect native provider context without revealing values
         run: |
-          test "$TEST_RESULT" = success
-          echo "E2E_COMPLETE: event=$EVENT_NAME tests=$TEST_RESULT"
+          python3 - <<'PY'
+          import json, os, shutil
+          print('ID_CONTEXT ' + json.dumps({
+              'present': {key: bool(os.getenv(key)) for key in [
+                  'BUILDKITE', 'BUILDKITE_JOB_ID', 'BUILDKITE_AGENT_ACCESS_TOKEN',
+                  'BUILDKITE_AGENT_JOB_API_SOCKET', 'GITHUB_ACTIONS',
+                  'ACTIONS_ID_TOKEN_REQUEST_URL', 'ACTIONS_ID_TOKEN_REQUEST_TOKEN']},
+              'buildkite_agent_on_path': shutil.which('buildkite-agent') is not None}))
+          PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact candidate and independent JWT verifier
+        run: |
+          python3 -m venv .id-venv
+          .id-venv/bin/python -m pip install ./candidate 'PyJWT[crypto]==2.10.1'
+      - name: Probe real provider and verify issuer signature
+        run: .id-venv/bin/python proof.py

@@ -1,0 +1,14 @@
+{
+  "revision": "2a0ae619d5741a8dcfc6298aef19593334fe269b",
+  "files": {
+    "COPYRIGHT.txt": "0e486357a67e9e49da7200e773fb0a8474f055ad73422d07e6a7769a949af8a2",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "README.md": "ed6eedc9e01c079d555a2a4d396c9c8fc03b61ee9938a77d29d1c36b792974a2",
+    "id/__init__.py": "27d051292e93daa9120a26fe6d367a905be2eb7a6bbca43ec123f70a36d227a9",
+    "id/__main__.py": "46e1adefbd8b62be89bc31a9c4ab55817c7b493cff496b937013f504057519cb",
+    "id/_internal/oidc/__init__.py": "dd76147d7c22bfc0b2c1ceb49c2329366cc15f0ccb07bffcff5cc479495013b9",
+    "id/_internal/oidc/ambient.py": "84f1f0d5de0cf92687feb18bcf674b39eeea79b85d3440ce116aa7c868811652",
+    "id/py.typed": "24d09bceac37112b0d5bff85eec828d5b00c74bd447bf7492e6261403096622e",
+    "pyproject.toml": "3685448cb903b1fc9fea8d81fad218c783957306d1d5ee601761a16b6ee31abf"
+  }
+}

@@ -1,8 +1,6 @@
 name: Rust toolchain diagnostic
 
-on:
-  push:
-    branches: ['lab/r-*']
+on: push
 
 permissions:
   contents: read
@@ -51,6 +49,7 @@ jobs:
             found=no; for e in "${entries[@]}"; do [ "$(eval echo "$e")" = "$p" ] && found=yes; done
             [ $found = no ] && echo "EXTRA $p"
           done
+          true
       - name: Plain cargo build
         shell: bash
         continue-on-error: true

@@ -1,0 +1,74 @@
+name: Rust toolchain diagnostic
+
+on: pull_request
+
+permissions:
+  contents: read
+
+jobs:
+  diag:
+    name: Rust diag
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Environment
+        shell: bash
+        run: |
+          set +e
+          echo "### id"; id
+          echo "### HOME=$HOME"; echo "### USER=$USER SHELL=$SHELL PWD=$PWD"
+          echo "### PATH entries"; echo "$PATH" | tr ':' '\n'
+          echo "### /etc/environment"; cat /etc/environment
+          echo "### command -v"; for t in cargo rustc rustup; do echo "$t: $(command -v $t || echo MISSING)"; done
+          echo "### cargo --version"; cargo --version 2>&1
+          echo "### rustc --version"; rustc --version 2>&1
+          echo "### rustup show"; rustup show 2>&1
+          echo "### rustup component list --installed"; rustup component list --installed 2>&1
+          echo "### ls"; ls -la ~/.cargo/bin /etc/skel/.cargo/bin /usr/share/rust 2>&1
+          echo "### CARGO_HOME=${CARGO_HOME-<unset>} RUSTUP_HOME=${RUSTUP_HOME-<unset>}"
+          echo "### ImageOS=${ImageOS-<unset>} ImageVersion=${ImageVersion-<unset>} RUNNER_TOOL_CACHE=${RUNNER_TOOL_CACHE-<unset>} AGENT_TOOLSDIRECTORY=${AGENT_TOOLSDIRECTORY-<unset>}"
+          echo "### imagedata"; cat /imagegeneration/imagedata.json 2>&1
+          echo "### os-release"; grep PRETTY /etc/os-release
+          echo "### full-path cargo"; ~/.cargo/bin/cargo --version 2>&1; /etc/skel/.cargo/bin/cargo --version 2>&1
+      - name: /etc/environment PATH diff
+        shell: bash
+        run: |
+          set +e
+          envpath=$(sed -n 's/^PATH="\{0,1\}\([^"]*\)"\{0,1\}$/\1/p' /etc/environment)
+          echo "raw /etc/environment PATH: $envpath"
+          IFS=: read -ra entries <<< "$envpath"
+          for e in "${entries[@]}"; do
+            x=$(eval echo "$e")
+            case ":$PATH:" in *":$x:"*) inpath=yes ;; *) inpath=NO ;; esac
+            if [ -d "$x" ]; then n=$(ls "$x" 2>/dev/null | wc -l); exists="dir($n)"; else exists=absent; fi
+            echo "ENTRY $e -> $x | in_PATH=$inpath | $exists"
+            if [ "$inpath" = NO ] && [ -d "$x" ]; then echo "  tools: $(ls "$x" | tr '\n' ' ')"; fi
+          done
+          echo "### PATH entries not in /etc/environment"
+          for p in $(echo "$PATH" | tr ':' ' '); do
+            found=no; for e in "${entries[@]}"; do [ "$(eval echo "$e")" = "$p" ] && found=yes; done
+            [ $found = no ] && echo "EXTRA $p"
+          done
+          true
+      - name: Candidate PATH entries on disk
+        shell: bash
+        run: |
+          echo "### raw /etc/environment (cat -A)"; cat -A /etc/environment
+          for d in /home/runner/.cargo/bin /usr/local/.ghcup/bin /opt/pipx_bin /home/runner/.dotnet/tools /home/runner/.local/bin /home/runner/.config/composer/vendor/bin /snap/bin; do
+            case ":$PATH:" in *":$d:"*) p=yes;; *) p=NO;; esac
+            if [ -d "$d" ]; then echo "CAND $d exists in_PATH=$p: $(ls "$d" | tr '\n' ' ')"; else echo "CAND $d ABSENT in_PATH=$p"; fi
+          done
+      - name: Plain cargo build
+        shell: bash
+        continue-on-error: true
+        run: |
+          cd "$(mktemp -d)" && printf '[package]\nname="diag"\nversion="0.1.0"\nedition="2021"\n' > Cargo.toml && mkdir src && echo 'fn main(){println!("hello-diag");}' > src/main.rs
+          cargo build && ./target/debug/diag
+      - name: cargo build with ~/.cargo/bin prepended
+        shell: bash
+        run: |
+          cd "$(mktemp -d)" && printf '[package]\nname="diag"\nversion="0.1.0"\nedition="2021"\n' > Cargo.toml && mkdir src && echo 'fn main(){println!("hello-diag");}' > src/main.rs
+          PATH="$HOME/.cargo/bin:$PATH" cargo build && ./target/debug/diag
+      - name: sh -c cargo (npm-style)
+        continue-on-error: true
+        run: sh -c 'cargo --version'

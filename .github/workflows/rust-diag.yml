@@ -1,6 +1,6 @@
 name: Rust toolchain diagnostic
 
-on: push
+on: pull_request
 
 permissions:
   contents: read

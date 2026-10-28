@@ -50,6 +50,14 @@ jobs:
             [ $found = no ] && echo "EXTRA $p"
           done
           true
+      - name: Candidate PATH entries on disk
+        shell: bash
+        run: |
+          echo "### raw /etc/environment (cat -A)"; cat -A /etc/environment
+          for d in /home/runner/.cargo/bin /usr/local/.ghcup/bin /opt/pipx_bin /home/runner/.dotnet/tools /home/runner/.local/bin /home/runner/.config/composer/vendor/bin /snap/bin; do
+            case ":$PATH:" in *":$d:"*) p=yes;; *) p=NO;; esac
+            if [ -d "$d" ]; then echo "CAND $d exists in_PATH=$p: $(ls "$d" | tr '\n' ' ')"; else echo "CAND $d ABSENT in_PATH=$p"; fi
+          done
       - name: Plain cargo build
         shell: bash
         continue-on-error: true
